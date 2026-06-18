@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LCA 기반 PCF 산정 Diagram</title>
+  <style>
+    :root {
+      --raw: #ff2b2b;
+      --electricity: #f6dd00;
+      --semi: #1479d4;
+      --product: #ff4be7;
+      --co: #00b956;
+      --waste: #ff8b5d;
+      --ink: #18202a;
+      --muted: #667085;
+      --line: #1b1f24;
+      --panel: #ffffff;
+      --bg: #f5f7fb;
+      --formula: #8f98a3;
+      --process: #f6d9cc;
+      --process-green: #c5f3ce;
+      --process-pink: #edc4e9;
+      font-family: Inter, Pretendard, "Noto Sans KR", Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #f7f9ff 0%, #eef4ff 45%, #fff7f2 100%);
+      color: var(--ink);
+    }
+
+    .page {
+      width: min(1600px, 100vw);
+      min-height: 900px;
+      margin: 0 auto;
+      padding: 28px 32px 36px;
+    }
+
+    header {
+      display: grid;
+      grid-template-columns: 1.25fr .75fr;
+      gap: 20px;
+      align-items: stretch;
+      margin-bottom: 22px;
+    }
+
+    .title-card, .guide-card, .formula-card, .diagram-card {
+      background: rgba(255, 255, 255, .88);
+      border: 1px solid rgba(27, 31, 36, .08);
+      border-radius: 22px;
+      box-shadow: 0 18px 45px rgba(23, 42, 84, .10);
+    }
+
+    .title-card { padding: 24px 28px; }
+    .eyebrow {
+      margin: 0 0 8px;
+      color: #3562d4;
+      font-weight: 800;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      font-size: 13px;
+    }
+    h1 { margin: 0; font-size: 34px; line-height: 1.18; letter-spacing: -.03em; }
+    .subtitle { margin: 12px 0 0; color: var(--muted); font-size: 16px; line-height: 1.55; }
+
+    .guide-card { padding: 18px 20px; }
+    .guide-card h2 { margin: 0 0 12px; font-size: 18px; }
+    .legend { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px 14px; }
+    .legend-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #344054; }
+    .swatch { width: 26px; height: 16px; border: 3px solid; background: white; border-radius: 4px; }
+    .note { margin-top: 12px; padding: 10px 12px; border-radius: 12px; background: #f3f6ff; color: #475467; font-size: 12px; line-height: 1.45; }
+
+    main { display: grid; grid-template-columns: 1fr; gap: 18px; }
+    .formula-card { padding: 18px 22px; border-left: 7px solid var(--formula); }
+    .formula-card h2 { margin: 0 0 8px; font-size: 18px; }
+    .formula-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .formula-box { padding: 13px 14px; border: 1.5px dashed #a5adba; border-radius: 14px; background: #fbfcff; font-size: 13px; line-height: 1.5; }
+    .formula-box strong { display: block; margin-bottom: 5px; font-size: 14px; }
+
+    .diagram-card { padding: 26px 24px 30px; overflow: auto; }
+    .flowline {
+      display: grid;
+      grid-template-columns: 185px 42px 160px 42px 165px 42px 160px 42px 150px 42px 140px;
+      grid-auto-rows: min-content;
+      align-items: center;
+      gap: 0;
+      min-width: 1330px;
+      position: relative;
+    }
+
+    .stack { display: flex; flex-direction: column; gap: 10px; align-items: stretch; }
+    .activity {
+      border: 3px solid var(--border);
+      border-radius: 14px;
+      background: white;
+      padding: 12px 13px;
+      min-height: 58px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      text-align: center;
+      box-shadow: 0 8px 18px rgba(18, 33, 72, .08);
+    }
+    .activity-name { font-weight: 800; font-size: 13px; line-height: 1.25; }
+    .amount { margin-top: 4px; color: #101828; font-weight: 700; font-size: 12px; }
+
+    .raw { --border: var(--raw); }
+    .electricity { --border: var(--electricity); }
+    .semi { --border: var(--semi); }
+    .product { --border: var(--product); }
+    .co { --border: var(--co); }
+    .waste { --border: var(--waste); }
+
+    .process {
+      border-radius: 18px;
+      min-height: 96px;
+      padding: 20px 14px;
+      text-align: center;
+      font-weight: 900;
+      font-size: 20px;
+      display: grid;
+      place-items: center;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,.03), 0 12px 28px rgba(18,33,72,.11);
+    }
+    .process small { display: block; margin-top: 4px; font-size: 11px; color: #6941c6; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+    .injection { background: var(--process); }
+    .painting { background: var(--process-green); }
+    .assembly { background: var(--process-pink); }
+
+    .arrow { height: 6px; background: var(--line); position: relative; margin: 0 9px; }
+    .arrow::after { content: ""; position: absolute; right: -1px; top: 50%; transform: translateY(-50%); border-left: 17px solid var(--line); border-top: 12px solid transparent; border-bottom: 12px solid transparent; }
+
+    .lane { display: contents; }
+    .top-input { grid-row: 1; margin-bottom: 18px; }
+    .core { grid-row: 2; }
+    .bottom-output { grid-row: 3; margin-top: 18px; }
+    .spacer { min-height: 74px; }
+    .bracket { border-right: 6px solid var(--line); border-top: 6px solid var(--line); border-bottom: 6px solid var(--line); height: 126px; margin-right: 9px; }
+
+    .callout-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 20px; min-width: 1330px; }
+    .callout { padding: 13px 15px; border-radius: 15px; background: #f8fafc; border: 1px solid #e4e7ec; font-size: 13px; line-height: 1.45; }
+    .callout strong { display: block; margin-bottom: 4px; }
+
+    [contenteditable="true"] { outline: none; }
+    [contenteditable="true"]:focus { box-shadow: 0 0 0 4px rgba(53, 98, 212, .18); border-radius: 8px; }
+
+    @media print {
+      body { background: white; }
+      .page { width: 1600px; padding: 18px; }
+      .title-card, .guide-card, .formula-card, .diagram-card { box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+  <section class="page">
+    <header>
+      <div class="title-card">
+        <p class="eyebrow" contenteditable="true">LCA-based Product Carbon Footprint</p>
+        <h1 contenteditable="true">Activity × Amount × EF로 연결되는 PCF 산정 흐름</h1>
+        <p class="subtitle" contenteditable="true">각 Flow 안의 단어는 <b>Activity</b>, 숫자와 단위는 <b>Amount</b>입니다. Process를 통과하며 Semi-Product와 Product의 탄소발자국이 누적·정리됩니다.</p>
+      </div>
+      <aside class="guide-card">
+        <h2 contenteditable="true">Diagram 용어</h2>
+        <div class="legend">
+          <div class="legend-item"><span class="swatch" style="border-color: var(--raw)"></span><span contenteditable="true">Raw Material Flow</span></div>
+          <div class="legend-item"><span class="swatch" style="border-color: var(--electricity)"></span><span contenteditable="true">Electricity Flow</span></div>
+          <div class="legend-item"><span class="swatch" style="border-color: var(--semi)"></span><span contenteditable="true">Semi-Product Flow</span></div>
+          <div class="legend-item"><span class="swatch" style="border-color: var(--product)"></span><span contenteditable="true">Product Flow</span></div>
+          <div class="legend-item"><span class="swatch" style="border-color: var(--co)"></span><span contenteditable="true">Co-Product Flow</span></div>
+          <div class="legend-item"><span class="swatch" style="border-color: var(--waste)"></span><span contenteditable="true">Waste Flow</span></div>
+        </div>
+        <div class="note" contenteditable="true">Tip: 텍스트를 클릭하면 바로 수정할 수 있습니다. 브라우저에서 인쇄 또는 PDF 저장 시 한 페이지 설명자료로 사용할 수 있습니다.</div>
+      </aside>
+    </header>
+
+    <main>
+      <section class="formula-card">
+        <h2 contenteditable="true">회색 계산식을 제품별 PCF 값으로 정리하는 방식</h2>
+        <div class="formula-grid">
+          <div class="formula-box" contenteditable="true"><strong>1) Injection Product 1 PCF</strong>Polycarbonate, ABS, Polyamide, Electricity, Waste 배출량을 합산 후 생산수량 10ea로 배분</div>
+          <div class="formula-box" contenteditable="true"><strong>2) Painting Product PCF</strong>Injection Product 투입 PCF + Silicon oxide, Carbon black, Electricity, Wastewater PCF를 제품별 생산수량으로 배분</div>
+          <div class="formula-box" contenteditable="true"><strong>3) Final Product PCF</strong>Painting Product 투입 PCF + Label, Electricity, Waste PCF를 JA/JB 생산수량으로 배분</div>
+        </div>
+      </section>
+
+      <section class="diagram-card">
+        <div class="flowline" aria-label="LCA based PCF flow diagram">
+          <div class="spacer top-input"></div><div></div><div class="activity electricity top-input"><span class="activity-name" contenteditable="true">Electricity</span><span class="amount" contenteditable="true">120Kwh</span></div><div></div><div></div><div></div><div class="activity electricity top-input"><span class="activity-name" contenteditable="true">Electricity</span><span class="amount" contenteditable="true">60Kwh</span></div><div></div><div></div><div></div><div class="activity electricity top-input"><span class="activity-name" contenteditable="true">Electricity</span><span class="amount" contenteditable="true">30Kwh</span></div>
+
+          <div class="stack core">
+            <div class="activity raw"><span class="activity-name" contenteditable="true">Polycarbonate</span><span class="amount" contenteditable="true">60kg</span></div>
+            <div class="activity raw"><span class="activity-name" contenteditable="true">ABS</span><span class="amount" contenteditable="true">30kg</span></div>
+            <div class="activity raw"><span class="activity-name" contenteditable="true">Polyamide</span><span class="amount" contenteditable="true">30kg</span></div>
+          </div>
+          <div class="arrow core"></div>
+          <div class="process injection core" contenteditable="true">Injection<br>Molding<small>Process</small></div>
+          <div class="arrow core"></div>
+          <div class="stack core">
+            <div class="activity semi"><span class="activity-name" contenteditable="true">Injection Product 1</span><span class="amount" contenteditable="true">10ea</span></div>
+            <div class="activity semi"><span class="activity-name" contenteditable="true">Injection Product 2</span><span class="amount" contenteditable="true">20ea</span></div>
+            <div class="activity semi"><span class="activity-name" contenteditable="true">Injection Product 3</span><span class="amount" contenteditable="true">30ea</span></div>
+            <div class="activity raw"><span class="activity-name" contenteditable="true">Silicon oxide</span><span class="amount" contenteditable="true">12kg</span></div>
+            <div class="activity raw"><span class="activity-name" contenteditable="true">Carbon black</span><span class="amount" contenteditable="true">6kg</span></div>
+          </div>
+          <div class="arrow core"></div>
+          <div class="process painting core" contenteditable="true">Painting<small>Process</small></div>
+          <div class="arrow core"></div>
+          <div class="stack core">
+            <div class="activity semi"><span class="activity-name" contenteditable="true">Painting Product 1</span><span class="amount" contenteditable="true">5ea</span></div>
+            <div class="activity semi"><span class="activity-name" contenteditable="true">Painting Product 2</span><span class="amount" contenteditable="true">10ea</span></div>
+            <div class="activity semi"><span class="activity-name" contenteditable="true">Painting Product 3</span><span class="amount" contenteditable="true">10ea</span></div>
+            <div class="activity product"><span class="activity-name" contenteditable="true">Label</span><span class="amount" contenteditable="true">25ea</span></div>
+          </div>
+          <div class="arrow core"></div>
+          <div class="process assembly core" contenteditable="true">Assembly<small>Process</small></div>
+          <div class="arrow core"></div>
+          <div class="stack core">
+            <div class="activity product"><span class="activity-name" contenteditable="true">JA</span><span class="amount" contenteditable="true">5ea</span></div>
+            <div class="activity co"><span class="activity-name" contenteditable="true">JB</span><span class="amount" contenteditable="true">10ea</span></div>
+          </div>
+
+          <div></div><div></div><div class="activity waste bottom-output"><span class="activity-name" contenteditable="true">Waste</span><span class="amount" contenteditable="true">6kg</span></div><div></div><div></div><div></div><div class="activity waste bottom-output"><span class="activity-name" contenteditable="true">Wastewater</span><span class="amount" contenteditable="true">12M3</span></div><div></div><div></div><div></div><div class="activity waste bottom-output"><span class="activity-name" contenteditable="true">Waste</span><span class="amount" contenteditable="true">3kg</span></div>
+        </div>
+
+        <div class="callout-row">
+          <div class="callout" contenteditable="true"><strong>Activity</strong>Flow 박스 안의 자원·제품·폐기물 명칭입니다.</div>
+          <div class="callout" contenteditable="true"><strong>Amount</strong>Activity와 함께 표시된 투입·산출 수량입니다.</div>
+          <div class="callout" contenteditable="true"><strong>Process</strong>Injection Molding, Painting, Assembly처럼 Flow를 변환하는 공정입니다.</div>
+          <div class="callout" contenteditable="true"><strong>PCF 누적</strong>각 공정의 투입 Flow PCF와 배출 Flow PCF를 합산하고 산출 제품 수량으로 배분합니다.</div>
+        </div>
+      </section>
+    </main>
+  </section>
+</body>
+</html>
